@@ -1,27 +1,25 @@
 ---
-- name: Moving_Vless_Json_Config
+- name: Transferring_Xray_Vless_Json_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-vless.json.j2
     dest: /home/ubuntu/Xray-linux-64/vless1.json
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.hard_nonexec }}"
 
-- name: Moving_Vpn_Script_File
+- name: Transferring_Xray_Vpn_Script_File
   become: true
   check_mode: false
   ansible.builtin.copy:
     src: vpn
     dest: /home/ubuntu/Xray-linux-64/vpn
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Kill_All_Process_On_Port_1081
+- name: Killing_All_Processes_OnPort_1081
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -29,7 +27,7 @@
   changed_when: false
   failed_when: false
 
-- name: Executing_VPN_Files_Seconds
+- name: Executing_VPN_File_Before_ShutDown
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -39,7 +37,7 @@
   async: 3600
   poll: 0
 
-- name: Pause_Execution_Of_Task_For_VPN
+- name: Pause_Execution_Of_AllTasks_ForVPN
   become: true
   check_mode: false
   ansible.builtin.pause:
@@ -47,7 +45,7 @@
     prompt: "Please Wait ..."
   failed_when: false
 
-- name: Check_Port_1081
+- name: Making_Sure_Port_1081_IsWorking_Before_Shutdown
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -55,22 +53,7 @@
   changed_when: false
   failed_when: false
 
-# - name: Add_Br_Netfilter_Module
-#   community.general.modprobe:
-#     name: br_netfilter
-#     state: present
-
-# - name: Change_Various_Sysctl_Settings
-#   ansible.posix.sysctl:
-#     name: "{{ item.key }}"
-#     state: present
-#     value: "{{ item.value }}"
-#     sysctl_file: /etc/sysctl.d/MeCan.conf
-#     reload: true
-#     ignoreerrors: true
-#   with_dict: '{{ sysctl_config }}'
-
-- name: Stop_And_Disable_UFW
+- name: Stopping_And_Disabling_UFW_Service
   become: true
   check_mode: false
   ansible.builtin.service:
@@ -79,7 +62,7 @@
     enabled: false
   failed_when: false
 
-- name: Stop_And_Disable_Postfix
+- name: Stopping_And_Disabling_Postfix_Service
   become: true
   check_mode: false
   ansible.builtin.service:
@@ -88,62 +71,52 @@
     enabled: false
   failed_when: false
 
-- name: Set_Timezone_To_Asia/Tehran
+- name: Setting_System_Timezone_To_Asia/Tehran
   become: true
   check_mode: false
   community.general.timezone:
     name: Asia/Tehran
-  notify: Restart_NTP
 
-- name: Set_Timeout_Configurations
+- name: Transferring_Timeout_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-timeout.j2
     dest: /etc/profile.d/timeout-settings.sh
-    owner: root
-    group: root
-    mode: "0755"
-    backup: true
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Copying_SSH_Banner_File
+- name: Transferring_SSH_Banner_File
   become: true
   check_mode: false
   ansible.builtin.copy:
     src: ssh_banner
     dest: /etc/issue
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
-    backup: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
   failed_when: false
 
-- name: Making_SSHD_configuration_file
+- name: Transferring_Sshd_config_file
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-sshd_config.j2
     dest: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: "0755"
-    backup: true
-    force: true
-  notify: Restart_SSH
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Making_Iptables_Configuration_File
+- name: Transferring_Iptables_Config_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-iptables.j2
     dest: /etc/iptables/rules.v4
-    owner: root
-    group: root
-    mode: "0755"
-    backup: true
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
 - name: Restoring_Iptables_State_From_File
   become: true
@@ -152,4 +125,3 @@
     path: /etc/iptables/rules.v4
     state: restored
     noflush: true
-  notify: Restart_Iptables
