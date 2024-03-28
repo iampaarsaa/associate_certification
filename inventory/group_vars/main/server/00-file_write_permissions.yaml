@@ -1,0 +1,12 @@
+---
+user_groups:
+  elevated_user: root
+  regular_user: ubuntu
+
+file_permissions:
+  hard_nonexec: "0600"
+  soft_nonexec: "0644"
+  hard_exec: "0700"
+  soft_exec: "0744"
+
+recursive_file_permission: true
