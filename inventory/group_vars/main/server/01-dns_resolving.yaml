@@ -1,5 +1,0 @@
----
-dns: 8.8.8.8 1.1.1.1
-fallback_dns: 9.9.9.9 4.2.2.4
-dnssec: allow-downgrade
-dns_over_tls: opportunistic
