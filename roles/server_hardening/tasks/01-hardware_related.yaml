@@ -1,40 +1,40 @@
 ---
-- name: Updating_APT_Source_List
+- name: Updating_Package_Manager_Sources_List
   become: true
   check_mode: false
   ansible.builtin.apt:
-    force: true
-    force_apt_get: true
     update_cache: true
-    update_cache_retries: 3
-    cache_valid_time: 86400
-    upgrade: safe
     autoclean: true
     autoremove: true
-    lock_timeout: 60
+    force_apt_get: "{{ aptget_operation_handler }}"
+    update_cache_retries: "{{ apt_operations_retries_attempts }}"
+    cache_valid_time: "{{ apt_operations_cached_valid_time }}"
+    lock_timeout: "{{ apt_possible_lock_situation_wait_time }}"
+    upgrade: safe
 
-- name: Downloading_Xray_Linux_64bit_Release
+- name: Downloading_Xray_Linux_64bit_Zip_File
   become: true
   check_mode: false
   ansible.builtin.uri:
-    url: https://github.com/XTLS/Xray-core/releases/download/v1.8.9/Xray-linux-64.zip
-    owner: ubuntu
-    group: ubuntu
-    mode: "0755"
-    dest: /home/ubuntu
-    method: GET
     force: true
+    method: GET
+    url: https://github.com/XTLS/Xray-core/releases/download/v1.8.9/Xray-linux-64.zip
+    dest: /home/ubuntu
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.hard_nonexec }}"
 
-- name: Creating_Xray_Directory
+
+- name: Creating_Xray_Linux64_Unpacked_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
-    path: /home/ubuntu/Xray-linux-64
-    owner: root
-    group: root
-    mode: "0755"
-    recurse: true
     state: directory
+    path: /home/ubuntu/Xray-linux-64
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
+    recurse: "{{ recursive_file_permission }}"
 
 - name: Installing_Hardening_Required_Packages
   become: true
@@ -42,25 +42,23 @@
   ansible.builtin.apt:
     name: "{{ item }}"
     state: present
-    update_cache: true
-    update_cache_retries: 3
-    lock_timeout: 60
-    force_apt_get: true
     autoclean: true
     autoremove: true
-    force: true
+    force_apt_get: "{{ aptget_operation_handler }}"
+    update_cache_retries: "{{ apt_operations_retries_attempts }}"
+    lock_timeout: "{{ apt_possible_lock_situation_wait_time }}"
   loop: "{{ hardening_required_packages }}"
 
-- name: Extracting_Xray_Linux_64Bit_Release
+- name: Extracting_Xray_Linux_64Bit_Zip_File
   become: true
   check_mode: false
   ansible.builtin.unarchive:
+    remote_src: true
     src: /home/ubuntu/Xray-linux-64.zip
     dest: /home/ubuntu/Xray-linux-64
-    remote_src: true
-    mode: "0755"
-    owner: root
-    group: root
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
 - name: Setting_Hostname_Using_Ansible
   become: true
@@ -68,19 +66,17 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
-- name: Modifying_etc_hosts
+- name: Transferring_Etc_Hosts_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-hostnames.j2
     dest: /etc/hosts
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Removing_TMP_Directory_From_Fstab
+- name: Unmounting_TMP_Directory
   become: true
   check_mode: false
   ansible.posix.mount:
@@ -92,83 +88,69 @@
   check_mode: false
   ansible.builtin.lineinfile:
     path: /etc/fstab
-    owner: root
-    group: root
-    mode: "0755"
     state: absent
     regexp: '^(.*)floppy(.*)$'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Limits_Conf
+- name: Transferring_Etc_Security_Limits_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-limits.conf.j2
     dest: /etc/security/limits.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Coredump_Conf
+- name: Transferring_Etc_Systemd_Coredump_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-coredump.conf.j2
     dest: /etc/systemd/coredump.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Systemd_Resolved_Conf
+- name: Transferring_Etc_Systemd_Resolved_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-resolved.conf.j2
     dest: /etc/systemd/resolved.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
-  notify:
-    - Reload_Systemd
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Etc_Resolv_Conf
+- name: Transferring_Etc_Resolv_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-resolv.conf.j2
     dest: /etc/resolv.conf
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
-    backup: true
     follow: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Hosts_Allow_Conf
+- name: Transferring_Etc_Hosts_Allow_Conf
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-hosts.allow.j2
     dest: /etc/hosts.allow
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Hosts_Deny_Conf
+- name: Transferring_Etc_Hosts_Deny_Conf
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 01-hosts.deny.j2
     dest: /etc/hosts.deny
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
