@@ -1,5 +1,5 @@
 ---
-- name: Set_Debian_audit_grub_cmdline
+- name: Setting_Grub_Audit_Option
   become: true
   check_mode: false
   ansible.builtin.lineinfile:
@@ -7,80 +7,70 @@
     dest: /etc/default/grub.d/99-hardening-audit.cfg
     state: present
     create: true
-    mode: "0755"
-    owner: root
-    group: root
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Auditd_Conf_File
+- name: Transferring_Auditd_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-auditd.conf.j2
     dest: /etc/audit/auditd.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-
-- name: Modifying_Auditd_Rules_File
+- name: Transferring_Auditd_Rules_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-hardening.rules.j2
     dest: /etc/audit/rules.d/hardening.rules
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
   notify:
     - Generate_Auditd
-    - Restart_Auditd
 
-- name: Modifying_Jounald_Conf_File
+- name: Transferring_Jounald_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-journald.conf.j2
     dest: /etc/systemd/journald.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Logrotate_Conf_File
+- name: Transferring_Logrotate_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-logrotate.conf.j2
     dest: /etc/logrotate.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0755"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Cron.daily_logrotate
+- name: Setting_Cron.daily_logrotate_NewJob
   become: true
   check_mode: false
   ansible.builtin.lineinfile:
     line: "/usr/sbin/logrotate /etc/logrotate.conf"
     dest: /etc/cron.daily/logrotate
-    mode: "0750"
     state: present
     create: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_rsyslog_Conf_File
+- name: Transferring_Rsyslog_Conf_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-rsyslog.conf.j2
     dest: /etc/rsyslog.conf
-    backup: true
-    owner: root
-    group: root
-    mode: "0640"
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
