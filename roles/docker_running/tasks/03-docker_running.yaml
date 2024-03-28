@@ -1,71 +1,77 @@
 ---
-- name: Creating_Registry_Userfile_Directory
+- name: Creating_Etc_Nginx_Auth_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/nginx/auth
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Nginx_Data_Directory
+- name: Creating_Etc_Nginx_Data_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/nginx/data
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Registry_Userfile_Htpasswd
+- name: Generating_htpasswd_UserList_File
   become: true
   check_mode: false
   community.general.htpasswd:
-    path: /etc/nginx/auth/nginx.htpasswd
-    owner: root
-    group: root
-    mode: '0755'
     state: present
-    name: parsa
-    password: parsa
+    path: /etc/nginx/auth/nginx.htpasswd
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
+    name: "{{ registry_credentials.htpasswd_username }}"
+    password: "{{ registry_credentials.htpasswd_password }}"
 
-- name: Modifying_Docker_Compose_File
+- name: Creating_Wordpress_Mysql_Compose_Directory
+  become: true
+  check_mode: false
+  ansible.builtin.file:
+    path: /home/ubuntu/project
+    state: directory
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
+
+- name: Tranferring_Wordpress_Mysql_Compose_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-docker-compose.yml.j2
     dest: /home/ubuntu/project/docker-compose.yml
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Registry_Compose_Directory
+- name: Creating_Registry_Nginx_Compose_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /home/ubuntu/registry
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Registry_Compose_File
+- name: Tranferring_Registry_Nginx_Compose_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-newregistry-compose.yml.j2
     dest: /home/ubuntu/registry/docker-compose.yml
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Test_Docker_Compose_Configuration_File
+- name: Validating_Wordpress_Mysql_Compose_File
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -73,7 +79,7 @@
   changed_when: false
   failed_when: false
 
-- name: Test_Registry_Compose_Configuration_File
+- name: Validating_Registry_Nginx_Compose_File
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -81,37 +87,7 @@
   changed_when: false
   failed_when: false
 
-# - name: Registry_Compose_Down_Prepairation
-#   become: true
-#   check_mode: false
-#   community.docker.docker_compose_v2:
-#     state: absent
-#     project_src: /home/ubuntu/registry
-#     remove_volumes: true
-#     remove_orphans: true
-#   environment: "{{ proxy_env }}"
-#   failed_when: false
-
-# - name: Docker_Compose_Down_Prepairation
-#   become: true
-#   check_mode: false
-#   community.docker.docker_compose_v2:
-#     state: absent
-#     project_src: /home/ubuntu/project
-#     remove_volumes: true
-#     remove_orphans: true
-#   environment: "{{ proxy_env }}"
-#   failed_when: false
-
-- name: Removing_Wordpress_Nginx_Config_Confd
-  become: true
-  check_mode: false
-  ansible.builtin.command:
-    cmd: "/bin/bash -c 'rm -f /etc/nginx/conf.d/wordpress_nginx.conf'"
-  changed_when: false
-  failed_when: false
-
-- name: Registry_Compose_Up_Execution
+- name: Executing_Registry_Nginx_Compose_File
   check_mode: false
   become: true
   community.docker.docker_compose_v2:
@@ -121,7 +97,7 @@
     dependencies: true
   environment: "{{ proxy_env }}"
 
-- name: Pause_Execution_Of_Task_Before_DockerLogin
+- name: Pause_Execution_Of_AllTasks_Before_DockerLogin
   become: true
   check_mode: false
   ansible.builtin.pause:
@@ -129,17 +105,17 @@
     prompt: "Please Wait ..."
   failed_when: false
 
-- name: Docker_Registry_Login
+- name: Logining_Into_Private_Cache_Registry
   become: true
   check_mode: false
   community.docker.docker_login:
     registry_url: https://reg.mahmoudisari.ir
-    username: parsa
-    password: parsa
     state: present
     timeout: 60
+    username: "{{ registry_credentials.htpasswd_username }}"
+    password: "{{ registry_credentials.htpasswd_password }}"
 
-- name: Docker_Compose_Up_Execution
+- name: Executing_Wordpress_Mysql_Compose_File
   check_mode: false
   become: true
   community.docker.docker_compose_v2:
@@ -149,13 +125,15 @@
     dependencies: true
   environment: "{{ proxy_env }}"
 
-- name: Moving_Wordpress_Nginx_Config_To_Confd
+- name: Tranferring_Wordpress_Nginx_Config_Files
   become: true
   check_mode: false
-  ansible.builtin.command:
-    cmd: "/bin/bash -c 'mv /home/ubuntu/project/wordpress_nginx.conf \
-     /etc/nginx/conf.d/wordpress_nginx.conf'"
-  changed_when: false
+  ansible.builtin.template:
+    src: 02-wordpress_nginx.conf.j2
+    dest: /etc/nginx/conf.d/wordpress_nginx.conf
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
 - name: Restarting_Nginx_Container
   become: true
@@ -165,7 +143,7 @@
     state: started
     restart: true
 
-- name: Pause_Execution_Of_Task_For_Containers
+- name: Pause_Execution_Of_AllTasks_ForContainers
   become: true
   check_mode: false
   ansible.builtin.pause:

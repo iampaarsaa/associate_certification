@@ -1,72 +1,68 @@
 ---
-- name: Create_letsencrypt_live_Dir
+- name: Creating_Letsencrypt_Live_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
+    state: directory
     path: /etc/letsencrypt/live
-    mode: "0644"
-    owner: root
-    group: root
-    state: directory
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Create_letsencrypt_live_Dir
+- name: Creating_Letsencrypt_WpMahmoudisari_Subdirectory
   become: true
   check_mode: false
   ansible.builtin.file:
-    path: /etc/letsencrypt/live/wp.mahmoudisari.ir
-    mode: "0644"
-    owner: root
-    group: root
     state: directory
+    path: /etc/letsencrypt/live/wp.mahmoudisari.ir
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_letsencrypt_privkey
+- name: Transferring_Letsencrypt_Privkey_Pem_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-privkey.pem.j2
     dest: /etc/letsencrypt/live/wp.mahmoudisari.ir/privkey.pem
-    mode: "0644"
-    owner: root
-    group: root
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_letsencrypt_fullchain
+- name: Transferring_Letsencrypt_Fullchain_Pem_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 03-fullchain.pem.j2
     dest: /etc/letsencrypt/live/wp.mahmoudisari.ir/fullchain.pem
-    mode: "0644"
-    owner: root
-    group: root
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Removing_Unofficial_Packages
+- name: Removing_Docker_Unofficial_Packages
   become: true
   check_mode: false
   ansible.builtin.apt:
     name: "{{ item }}"
     state: absent
-    force: true
-    force_apt_get: true
     purge: true
     clean: true
-    lock_timeout: 60
+    force_apt_get: "{{ aptget_operation_handler }}"
+    lock_timeout: "{{ apt_possible_lock_situation_wait_time }}"
   loop: "{{ docker_obselete_packages }}"
 
-- name: Updating_APT_Source_List
+- name: Updating_Package_Manager_Sources_List
   become: true
   check_mode: false
   ansible.builtin.apt:
-    force: true
-    force_apt_get: true
     update_cache: true
-    update_cache_retries: 3
-    cache_valid_time: 86400
     upgrade: safe
     autoclean: true
     autoremove: true
-    lock_timeout: 60
+    force_apt_get: "{{ aptget_operation_handler }}"
+    update_cache_retries: "{{ apt_operations_retries_attempts }}"
+    cache_valid_time: "{{ apt_operations_cached_valid_time }}"
+    lock_timeout: "{{ apt_possible_lock_situation_wait_time }}"
 
 - name: Creating_APT_Keyrings_Directory
   become: true
@@ -74,11 +70,11 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Kill_All_Process_On_Port_1081
+- name: Killing_All_Processes_OnPort_1081
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -86,7 +82,7 @@
   changed_when: false
   failed_when: false
 
-- name: Executing_VPN_Files
+- name: Executing_VPN_File_After_Shutdown
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -96,7 +92,7 @@
   async: 3600
   poll: 0
 
-- name: Pause_Execution_Of_Task_For_VPN
+- name: Pause_Execution_Of_AllTasks_For_VPN
   become: true
   check_mode: false
   ansible.builtin.pause:
@@ -104,7 +100,7 @@
     prompt: "Please Wait ..."
   failed_when: false
 
-- name: Check_Port_1081_Second
+- name: Making_Sure_Port_1081_IsWorking_After_Shutdown
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -112,23 +108,22 @@
   changed_when: false
   failed_when: false
 
-- name: Obtaining_Docker_GPG_Key
+- name: Obtaining_Docker_GPGKey_From_Official_Link
   become: true
   check_mode: false
   ansible.builtin.uri:
+    force: true
+    method: GET
+    timeout: 60
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
-    mode: "0755"
-    owner: root
-    group: root
-    method: GET
-    return_content: true
-    timeout: 60
-    force: true
     creates: /etc/apt/keyrings/docker.asc
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
   environment: "{{ proxy_env }}"
 
-- name: Adding_Docker_Source_List
+- name: Setting_Package_Manager_Docker_Source_List
   become: true
   check_mode: false
   ansible.builtin.apt_repository:
@@ -136,7 +131,7 @@
       https://download.docker.com/linux/ubuntu jammy stable"
     state: present
     update_cache: true
-    update_cache_retries: 3
+    update_cache_retries: "{{ apt_operations_retries_attempts }}"
   failed_when: false
   environment: "{{ proxy_env }}"
 
@@ -147,11 +142,11 @@
     name: "{{ item }}"
     state: present
     update_cache: true
-    update_cache_retries: 3
-    lock_timeout: 60
-    force_apt_get: true
     autoclean: true
     autoremove: true
-    force: true
+    force_apt_get: "{{ aptget_operation_handler }}"
+    update_cache_retries: "{{ apt_operations_retries_attempts }}"
+    cache_valid_time: "{{ apt_operations_cached_valid_time }}"
+    lock_timeout: "{{ apt_possible_lock_situation_wait_time }}"
   loop: "{{ docker_latest_packages }}"
   environment: "{{ proxy_env }}"

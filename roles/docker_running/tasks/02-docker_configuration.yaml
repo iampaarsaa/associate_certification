@@ -1,71 +1,54 @@
-- name: Creating_Docker_Daemon_Directory_etcdocker
+- name: Creating_Etc_Docker_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/docker
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Docker_Daemon_Directory_etcsystemd
+- name: Creating_Etc_Systemd_Docker_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/systemd/system/docker.service.d
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-# - name: Modifying_Docker_Daemon_etcsystemd
-#   become: true
-#   ansible.builtin.template:
-#     src: 02-systemd_docker_daemon.conf.j2
-#     dest: /etc/systemd/system/docker.service.d/daemon.conf
-#     backup: true
-#     owner: root
-#     group: root
-#     mode: '0755'
-#     force: true
-#   notify:
-#     - Restart_Docker
-
-- name: Modifying_Docker_Daemon_etcdocker
+- name: Tranferring_Etc_Docker_Daemon_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-docker_daemon.json.j2
     dest: /etc/docker/daemon.json
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Docker_Registry_Directory
+- name: Creating_Etc_Docker_Registry_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/docker/registry
     state: directory
-    owner: root
-    group: root
-    mode: '0755'
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Docker_Registry_Config
+- name: Tranferring_Docker_Registry_Config_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-registry_config.yml.j2
     dest: /etc/docker/registry/config.yml
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Adding_User_To_Docker_Group
+- name: Adding_Regular_User_ToDocker_UserGroup
   become: true
   check_mode: false
   ansible.builtin.command:
@@ -82,61 +65,37 @@
     state: restarted
   failed_when: false
 
-- name: Creating_Nginx_Directory
+- name: Creating_Etc_Nginx_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/nginx/
-    owner: root
-    group: root
-    mode: '0755'
     state: directory
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Nginx_Confd_Directoy_For_ConfigFile
+- name: Creating_Etc_Nginx_Confd_Directory
   become: true
   check_mode: false
   ansible.builtin.file:
     path: /etc/nginx/conf.d
-    owner: root
-    group: root
-    mode: '0755'
     state: directory
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Modifying_Registry_Nginx_Configuration_Files
+- name: Tranferring_Registry_Nginx_Config_File
   become: true
   check_mode: false
   ansible.builtin.template:
     src: 02-registry_nginx.conf.j2
     dest: /etc/nginx/conf.d/registry_nginx.conf
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
+    owner: "{{ user_groups.elevated_user }}"
+    group: "{{ user_groups.elevated_user }}"
+    mode: "{{ file_permissions.soft_nonexec }}"
 
-- name: Creating_Docker_Compose_Directory
-  become: true
-  check_mode: false
-  ansible.builtin.file:
-    path: /home/ubuntu/project
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Modifying_Wordpress_Nginx_Configuration_Files
-  become: true
-  check_mode: false
-  ansible.builtin.template:
-    src: 02-wordpress_nginx.conf.j2
-    dest: /home/ubuntu/project/wordpress_nginx.conf
-    backup: true
-    owner: root
-    group: root
-    mode: '0755'
-    force: true
-
-- name: Disable_Nginx_Service_Inside_Server
+- name: Disable_Nginx_Service_Using_Systemd
   become: true
   check_mode: false
   ansible.builtin.systemd:
