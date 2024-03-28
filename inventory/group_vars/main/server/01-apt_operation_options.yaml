@@ -1,0 +1,5 @@
+---
+aptget_operation_handler: true
+apt_operations_retries_attempts: 3
+apt_operations_cached_valid_time: 86400
+apt_possible_lock_situation_wait_time: 60
