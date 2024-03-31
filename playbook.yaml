@@ -5,7 +5,7 @@
   roles:
     - { role: prepare, become: true }
     - { role: proxy, become: true }
-    - { role: certificates, become: true }
+    - { role: prepare_webserver, become: true }
 
 - name: Setup Docker registry
   hosts: main
