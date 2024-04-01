@@ -1,21 +1,20 @@
 ---
-- name: Set Cloudflares New <A> Records
+- name: Transfer arvancloud_api.py
   become: true
   check_mode: false
-  community.general.cloudflare_dns:
-    solo: true
-    state: present
-    timeout: 60
-    type: A
-    zone: "{{ root_domain }}"
-    api_token: "{{ cloudflare_dns.api_token }}"
-    account_api_key: "{{ cloudflare_dns.account_token }}"
-    account_email: "{{ cloudflare_dns.account_email }}"
-    record: "{{ item }}"
-    value: "{{ ansible_host }}"
-  loop:
-    - "{{ wordpress.subdomain }}"
-    - "{{ registry.subdomain }}"
+  ansible.builtin.template:
+    src: arvancloud_api.py.j2
+    dest: /home/ubuntu/arvancloud_api.py
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Execute arvancloud_api.py
+  become: true
+  check_mode: false
+  ansible.builtin.command:
+    cmd: python3 /home/ubuntu/arvancloud_api.py
+  changed_when: false
 
 - name: Create certificates directory
   become: true

@@ -1,0 +1,44 @@
+import requests
+
+def update_subdomain_records():
+    subdomain_list = [
+        {"subdomain_name": "{{ wordpress.subdomain }}", "subdomain_id": ""},
+        {"subdomain_name": "{{ registry.subdomain }}", "subdomain_id": ""}
+    ]
+
+    base_url = 'https://napi.arvancloud.ir/cdn/4.0/domains/mahmoudisari.ir/dns-records/'
+    request_headers = {
+        'Authorization': '{{ arvancloud_api.apikey }}',
+        'Accept': 'application/json',
+    }
+
+    for subdomain in subdomain_list:
+        response = requests.get(
+            base_url,
+            headers=request_headers,
+            timeout=30)
+        response_json = response.json()
+        for record in response_json["data"]:
+            if record["name"] == subdomain["subdomain_name"]:
+                subdomain["subdomain_id"] = record["id"]
+        record_url = base_url + subdomain["subdomain_id"]
+        record_payload = {
+        "value": [
+            {
+                "ip": "{{ ansible_host }}"
+            }
+        ],
+        "type": "a",
+        "name": subdomain["subdomain_name"],
+        "ttl": 120,
+        "cloud": False,
+        "upstream_https": "default",
+        "ip_filter_mode": {}
+        }
+        requests.put(
+            url=record_url,
+            json=record_payload,
+            headers=request_headers,
+            timeout=30).json()
+
+update_subdomain_records()
