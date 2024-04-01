@@ -2,8 +2,8 @@ import requests
 
 def update_subdomain_records():
     subdomain_list = [
-        {"subdomain_name": "{{ wordpress.subdomain }}", "subdomain_id": ""},
-        {"subdomain_name": "{{ registry.subdomain }}", "subdomain_id": ""}
+        {"name": "{{ wordpress.subdomain }}", "id": "", "found": False},
+        {"name": "{{ registry.subdomain }}", "id": "", "found": False}
     ]
 
     base_url = 'https://napi.arvancloud.ir/cdn/4.0/domains/mahmoudisari.ir/dns-records/'
@@ -11,34 +11,58 @@ def update_subdomain_records():
         'Authorization': '{{ arvancloud_api.apikey }}',
         'Accept': 'application/json',
     }
+    try:
+        get_response = requests.get(base_url,headers=request_headers,timeout=30)
+        get_response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        print("ERROR CODE:",get_response.status_code)
+        print("ERROR MESSAGE:", get_response.text)
+        exit()
 
+    response_json = get_response.json()
     for subdomain in subdomain_list:
-        response = requests.get(
-            base_url,
-            headers=request_headers,
-            timeout=30)
-        response_json = response.json()
         for record in response_json["data"]:
-            if record["name"] == subdomain["subdomain_name"]:
-                subdomain["subdomain_id"] = record["id"]
-        record_url = base_url + subdomain["subdomain_id"]
-        record_payload = {
-        "value": [
-            {
-                "ip": "{{ ansible_host }}"
-            }
-        ],
-        "type": "a",
-        "name": subdomain["subdomain_name"],
-        "ttl": 120,
-        "cloud": False,
-        "upstream_https": "default",
-        "ip_filter_mode": {}
-        }
-        requests.put(
-            url=record_url,
-            json=record_payload,
-            headers=request_headers,
-            timeout=30).json()
+            if record["name"] == subdomain["name"]:
+                subdomain["id"] = record["id"]
+                subdomain["found"]= True
 
+        record_url = base_url + subdomain["id"]
+        update_record_payload = {
+            "value": [
+                {
+                    "ip": "{{ ansible_host }}"
+                }
+            ],
+            "type": "a",
+            "name": subdomain["name"],
+            "ttl": 120,
+            "cloud": False,
+            "upstream_https": "default",
+            "ip_filter_mode": {}
+        }
+
+        if not subdomain["found"]:
+            add_record_payload = update_record_payload
+            # the only difference between payloads of update_rec and add_rec
+            add_record_payload["ip_filter_mode"] = {
+            "count": "single",
+            "order": "none",
+            "geo_filter": "none"
+            }
+            try:
+                post_response = requests.post(url=base_url,headers=request_headers,json=add_record_payload,timeout=30)
+                post_response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                print("ERROR CODE:",post_response.status_code)
+                print("ERROR MESSAGE:", post_response.text)
+                exit()
+            break
+
+        try:
+            put_response= requests.put(url=record_url,json=update_record_payload,headers=request_headers,timeout=30)
+            put_response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            print("ERROR CODE:",post_response.status_code)
+            print("ERROR MESSAGE:", post_response.text)
+            exit()
 update_subdomain_records()
