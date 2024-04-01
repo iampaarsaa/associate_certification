@@ -1,20 +1,33 @@
 ---
-- name: Transfer arvancloud_api.py
-  become: true
+- name: Make arvancloud_api.py file
+  become: false
   check_mode: false
   ansible.builtin.template:
     src: arvancloud_api.py.j2
-    dest: /home/ubuntu/arvancloud_api.py
-    owner: root
-    group: root
+    dest: "/home/{{ lookup('env', 'USER') }}/arvancloud_api.py"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
     mode: "0644"
+  delegate_to: localhost
 
 - name: Execute arvancloud_api.py
-  become: true
+  become: false
   check_mode: false
   ansible.builtin.command:
-    cmd: python3 /home/ubuntu/arvancloud_api.py
+    cmd: "/bin/bash -c 'python3 /home/{{ lookup('env', 'USER') }}/arvancloud_api.py'"
   changed_when: false
+  delegate_to: localhost
+
+- name: Delete arvancloud_api.py from local
+  become: false
+  check_mode: false
+  ansible.builtin.file:
+    path: "/home/{{ lookup('env', 'USER') }}/arvancloud_api.py"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: "0644"
+    state: absent
+  delegate_to: localhost
 
 - name: Create certificates directory
   become: true
