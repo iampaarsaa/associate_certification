@@ -3,17 +3,17 @@ import validators
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--sub",type=str, nargs="*",required=True)
+parser.add_argument("--subdomain",type=str, nargs="*",required=True)
 parser.add_argument("--domain", type=str,required=True)
-parser.add_argument("--key", type=str,required=True)
-parser.add_argument("--ip", type=str,required=True)
+parser.add_argument("--apikey", type=str,required=True)
+parser.add_argument("--ipaddress", type=str,required=True)
 args = parser.parse_args()
 
 
-given_subdomains = args.sub
+given_subdomains = args.subdomain
 domain = args.domain
-api_key = args.key
-ip_address = args.ip
+api_key = args.apikey
+ip_address = args.ipaddress
 
 
 base_url = f"https://napi.arvancloud.ir/cdn/4.0/domains/{domain}/dns-records/"
@@ -30,9 +30,9 @@ def validate_argsformat():
         print("ERROR MESSAGE: Domain's Format Is Not Valid")
         exit()
     for each_subdomain in given_subdomains:
-        if not each_subdomain.isalpha():
+        if not each_subdomain.isalnum():
             print("ERROR MESSAGE: Subdomain's Format Is Not Valid")
-        # full_domain = each_subdomain + "." + domain
+            exit()
 
 
 def handle_errors(response):
@@ -44,9 +44,9 @@ def handle_errors(response):
 
 def update_subdomain_records():
     validate_argsformat()
-    subdomain_list=[]
+    subdomain_list={}
     for each_given_subdomain in given_subdomains:
-        subdomain_list.append({"name": each_given_subdomain, "id":""})
+        subdomain_list[each_given_subdomain]=""
 
     list_response = requests.get(base_url, headers=request_headers, timeout=30)
     handle_errors(list_response)
@@ -58,23 +58,24 @@ def update_subdomain_records():
         record_dict[record['name']] = record['id']
 
     for subdomain in subdomain_list:
-        subdomain["id"] = record_dict.get(subdomain["name"])
         record_payload = {
             "value": [{"ip": ip_address}],
             "type": "a",
-            "name": subdomain["name"],
+            "name": subdomain,
             "ttl": 120,
             "cloud": False,
         }
+        if subdomain in record_dict:
+            subdomain_list[subdomain]=record_dict[subdomain]
 
-        if not subdomain["id"]:
+        if not subdomain_list[subdomain]:
             add_response = requests.post(
                 url=base_url, headers=request_headers, json=record_payload, timeout=30
             )
-            handle_errors(add_response.json)
+            handle_errors(add_response)
             continue
 
-        record_url = base_url + subdomain["id"]
+        record_url = base_url + subdomain_list[subdomain]
         update_response = requests.put(
             url=record_url, json=record_payload, headers=request_headers, timeout=30
         )
