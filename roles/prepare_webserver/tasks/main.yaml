@@ -1,5 +1,24 @@
 ---
-- name: Execute arvancloud_api.py
+- name: Install python3-pip package (local machine)
+  become: true
+  check_mode: false
+  ansible.builtin.apt:
+    name: python3-pip
+    state: present
+    update_cache: true
+    update_cache_retries: 3
+    lock_timeout: 60
+  delegate_to: localhost
+
+- name: Install validators packages (local machine)
+  become: true
+  check_mode: false
+  ansible.builtin.pip:
+    name: validators
+    state: present
+  delegate_to: localhost
+
+- name: Execute arvancloud_api.py (local machine)
   become: false
   check_mode: false
   ansible.builtin.command:
