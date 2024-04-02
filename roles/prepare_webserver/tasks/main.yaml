@@ -1,17 +1,6 @@
 ---
-- name: Install python3-pip package (local machine)
-  become: true
-  check_mode: false
-  ansible.builtin.apt:
-    name: python3-pip
-    state: present
-    update_cache: true
-    update_cache_retries: 3
-    lock_timeout: 60
-  delegate_to: localhost
-
 - name: Install validators packages (local machine)
-  become: true
+  become: false
   check_mode: false
   ansible.builtin.pip:
     name: validators
@@ -25,9 +14,9 @@
     chdir: "{{ role_path }}"
     cmd: "/bin/bash -c 'python3 \
       files/arvancloud_api.py \
-      --wpdomain {{ wordpress.subdomain }} --regdomain {{ registry.subdomain }} \
-      --rootdomain {{ root_domain }} --apikey {{ arvancloud_api.apikey }} \
-      --ansiblehost {{ ansible_host }}'"
+      --sub {{ wordpress.subdomain }} {{ registry.subdomain }} \
+      --domain {{ root_domain }} --key {{ arvancloud_api.apikey }} \
+      --ip {{ ansible_host }}'"
   changed_when: false
   delegate_to: localhost
 
