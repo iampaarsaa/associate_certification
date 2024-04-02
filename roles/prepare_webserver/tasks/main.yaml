@@ -3,13 +3,9 @@
   become: false
   check_mode: false
   ansible.builtin.pip:
-    name: "{{ item }}"
+    name: validators
     state: present
   delegate_to: localhost
-  loop:
-    - validators
-    - requests
-    - argparse
 
 - name: Execute arvancloud_api.py (local machine)
   become: false
