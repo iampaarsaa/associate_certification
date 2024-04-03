@@ -3,9 +3,12 @@
   become: false
   check_mode: false
   ansible.builtin.pip:
-    name: validators
+    name: "{{ item }}"
     state: present
   delegate_to: localhost
+  loop:
+    - validators
+    - requests
 
 - name: Execute arvancloud_api.py (local machine)
   become: false
@@ -14,9 +17,9 @@
     chdir: "{{ role_path }}"
     cmd: "/bin/bash -c 'python3 \
       files/arvancloud_api.py \
-      --sub {{ wordpress.subdomain }} {{ registry.subdomain }} \
-      --domain {{ root_domain }} --key {{ arvancloud_api.apikey }} \
-      --ip {{ ansible_host }}'"
+      --subdomain {{ wordpress.subdomain }} {{ registry.subdomain }} \
+      --domain {{ root_domain }} --apikey {{ arvancloud_api.apikey }} \
+      --ipaddress {{ ansible_host }}'"
   changed_when: false
   delegate_to: localhost
 
