@@ -30,7 +30,7 @@
   become: true
   check_mode: false
   ansible.builtin.command:
-    cmd: "/bin/bash -c 'docker compose config -f {{ wordpress.root }}/docker-compose.yaml'"
+    cmd: "docker compose config -f {{ wordpress.root }}/docker-compose.yaml"
   changed_when: false
   failed_when: false
 

@@ -64,7 +64,7 @@
   become: true
   check_mode: false
   ansible.builtin.command:
-    cmd: "/bin/bash -c 'docker compose -f {{ registry.root }}/docker-compose.yaml config'"
+    cmd: "docker compose -f {{ registry.root }}/docker-compose.yaml config"
   changed_when: false
   failed_when: false
 

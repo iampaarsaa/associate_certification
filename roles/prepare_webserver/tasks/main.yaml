@@ -15,11 +15,11 @@
   check_mode: false
   ansible.builtin.command:
     chdir: "{{ role_path }}"
-    cmd: "/bin/bash -c 'python3 \
+    cmd: "python3 \
       files/arvancloud_api.py \
       --subdomain {{ wordpress.subdomain }} {{ registry.subdomain }} \
       --domain {{ root_domain }} --apikey {{ arvancloud_api.apikey }} \
-      --ipaddress {{ ansible_host }}'"
+      --ip {{ ansible_host }}"
   changed_when: false
   delegate_to: localhost
 
