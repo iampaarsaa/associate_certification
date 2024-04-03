@@ -72,7 +72,7 @@ def update_subdomain_records(domain: str, subdomains: list[str], ip: str, api_ke
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--subdomain", type=str, nargs="*", required=True)
+    parser.add_argument("--subdomain", type=str, nargs="+", required=True)
     parser.add_argument("--domain", type=str, required=True)
     parser.add_argument("--apikey", type=str, required=True)
     parser.add_argument("--ip", type=str, required=True)
