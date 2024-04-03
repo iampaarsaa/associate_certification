@@ -1,3 +1,4 @@
+from collections import defaultdict
 import requests
 import validators
 import argparse
@@ -41,45 +42,40 @@ def handle_errors(response):
         print("ERROR MESSAGE:", response.reason)
         exit()
 
-
 def update_subdomain_records():
     validate_argsformat()
-    subdomain_list={}
-    for each_given_subdomain in given_subdomains:
-        subdomain_list[each_given_subdomain]=""
+    subdomain_dict = defaultdict(str)
 
     list_response = requests.get(base_url, headers=request_headers, timeout=30)
     handle_errors(list_response)
 
     response_json = list_response.json()
 
-    record_dict = {}
     for record in response_json["data"]:
-        record_dict[record['name']] = record['id']
+        subdomain_dict[record['name']] = record['id']
 
-    for subdomain in subdomain_list:
+    for each_given_subdomain in given_subdomains:
         record_payload = {
             "value": [{"ip": ip_address}],
             "type": "a",
-            "name": subdomain,
+            "name": each_given_subdomain,
             "ttl": 120,
             "cloud": False,
         }
-        if subdomain in record_dict:
-            subdomain_list[subdomain]=record_dict[subdomain]
 
-        if not subdomain_list[subdomain]:
+        subdomain_id = subdomain_dict[each_given_subdomain]
+
+        if not subdomain_id:
             add_response = requests.post(
                 url=base_url, headers=request_headers, json=record_payload, timeout=30
             )
             handle_errors(add_response)
             continue
 
-        record_url = base_url + subdomain_list[subdomain]
+        record_url = base_url + subdomain_id
         update_response = requests.put(
             url=record_url, json=record_payload, headers=request_headers, timeout=30
         )
         handle_errors(update_response)
-
 
 update_subdomain_records()
